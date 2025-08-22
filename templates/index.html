@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Yoga-82 Pose Classifier</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <main class="container">
+    <h1>🧘‍♀️ Yoga Pose Classifier</h1>
+    <p>อัปโหลดภาพท่าโยคะ ให้โมเดล (BlazePose + XGBoost) ทายว่าเป็นท่าไหน</p>
+
+    <form id="upload-form">
+      <input id="file" type="file" accept="image/*" required />
+      <button type="submit">ทำนาย</button>
+    </form>
+
+    <section id="preview" class="panel">
+      <h2>ภาพตัวอย่าง</h2>
+      <img id="preview-img" alt="preview" />
+    </section>
+
+    <section id="result" class="panel hidden">
+      <h2>ผลลัพธ์</h2>
+      <p id="pred"></p>
+      <table id="probs"></table>
+      <h3>โครงร่าง (annotated)</h3>
+      <img id="annotated" alt="annotated" />
+    </section>
+
+    <section id="error" class="panel error hidden">
+      <h2>เกิดข้อผิดพลาด</h2>
+      <pre id="err-text"></pre>
+    </section>
+  </main>
+
+  <script>
+    const fileInput = document.getElementById("file");
+    const form = document.getElementById("upload-form");
+    const previewImg = document.getElementById("preview-img");
+    const resultSec = document.getElementById("result");
+    const predP = document.getElementById("pred");
+    const probsTbl = document.getElementById("probs");
+    const annotatedImg = document.getElementById("annotated");
+    const errSec = document.getElementById("error");
+    const errText = document.getElementById("err-text");
+
+    fileInput.addEventListener("change", (e) => {
+      const f = e.target.files[0];
+      if (!f) return;
+      previewImg.src = URL.createObjectURL(f);
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errSec.classList.add("hidden");
+      resultSec.classList.add("hidden");
+
+      const f = fileInput.files[0];
+      if (!f) return;
+
+      const fd = new FormData();
+      fd.append("file", f, f.name);
+
+      const res = await fetch("/predict", { method: "POST", body: fd });
+      const data = await res.json();
+
+      if (!data.ok) {
+        errText.textContent = data.error || "unknown_error";
+        errSec.classList.remove("hidden");
+        return;
+      }
+
+      predP.textContent = "ท่าที่ทายได้: " + data.predicted;
+
+      probsTbl.innerHTML = "<tr><th>ท่า</th><th>ความน่าจะเป็น</th></tr>";
+      (data.topk || []).forEach(row => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${row.label}</td><td>${(row.prob*100).toFixed(2)}%</td>`;
+        probsTbl.appendChild(tr);
+      });
+
+      annotatedImg.src = data.annotated || "";
+      resultSec.classList.remove("hidden");
+    });
+  </script>
+</body>
+</html>
