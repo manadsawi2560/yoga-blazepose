@@ -109,7 +109,6 @@ https://www.kaggle.com/datasets/akashrayhan/yoga-82/data
 ## Confusion Matrix
 ![Confusion Matrix Normalized](/models/metrics/confusion_matrix_norm.png)  
 
-![Confusion Matrix Report](models/metrics/classification_report.csv)
 
 ## App.py Run Test
 ![Image showing the classification test.](yoga_test.png)
